@@ -10,13 +10,7 @@ import checkRouter from './routes/check.js';
 import dataRouter from './routes/data.js';
 import pingRouter from './routes/ping.js';
 
-// Compute __dirname compatibly with ESM (tsx) and CJS (esbuild bundle)
-const __dirname =
-  'import.meta' in globalThis
-    ? path.dirname(fileURLToPath((globalThis as any).import.meta.url))
-    : path.dirname(process.argv[1]);
-
-export function createApp() {
+export function createApp(webDistOverride?: string) {
   const app = express();
 
   app.use(cors());
@@ -34,8 +28,12 @@ export function createApp() {
     res.json({ ok: true, data: { status: 'healthy' } });
   });
 
-  // Production: serve web build
-  const webDist = path.resolve(__dirname, '../../web/dist');
+  // Serve web dist
+  const webDist = webDistOverride || (() => {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    return path.resolve(__dirname, '../../web/dist');
+  })();
+
   if (fs.existsSync(webDist)) {
     app.use(express.static(webDist));
     app.get('*', (_req, res) => {

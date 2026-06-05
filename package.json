@@ -17,10 +17,10 @@
     "url": "https://github.com/crequency/Portfolio"
   },
   "bin": {
-    "portfolio": "./packages/server/dist/cli.cjs"
+    "portfolio": "./packages/server/dist/cli/index.js"
   },
   "files": [
-    "packages/server/dist/cli.cjs",
+    "packages/server/dist/cli",
     "packages/web/dist"
   ],
   "scripts": {

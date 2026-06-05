@@ -6,7 +6,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.cjs --format=cjs --banner:js='#!/usr/bin/env node'",
+    "build": "tsc && ncc build src/cli.ts -o dist/cli --no-source-map-register && printf '#!/usr/bin/env node\\n' | cat - dist/cli/index.js > dist/cli/index.js.tmp && mv dist/cli/index.js.tmp dist/cli/index.js",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit"
   },
@@ -19,7 +19,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
-    "esbuild": "^0.25.0",
+    "@vercel/ncc": "^0.38.3",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0"
   }
