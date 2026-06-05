@@ -1,6 +1,10 @@
-# Portfolio
+<p align="center">
+  <img src="assets/logo.svg" alt="Portfolio" width="128" />
+</p>
 
-A local web server app for managing project port allocations — track which projects use which ports, detect process liveness, and avoid port conflicts.
+<h1 align="center">Portfolio</h1>
+
+<p align="center">A local web server app for managing project port allocations — track which projects use which ports, detect process liveness, and avoid port conflicts.</p>
 
 ## Features
 
