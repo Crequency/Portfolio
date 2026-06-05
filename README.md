@@ -124,6 +124,28 @@ Portfolio/
 { "ok": false, "error": { "code": "NOT_FOUND", "message": "Project not found" } }
 ```
 
+## Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/).
+
+```
+<type>: <description>
+```
+
+| Type | Usage |
+|------|-------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting, missing semicolons, etc. |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `perf` | Performance improvement |
+| `test` | Adding or correcting tests |
+| `chore` | Tooling, dependencies, build scripts |
+| `ci` | CI/CD configuration |
+
+All commits must be GPG-signed.
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE)
