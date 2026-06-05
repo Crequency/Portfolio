@@ -1,10 +1,26 @@
 {
-  "name": "portfolio",
-  "private": true,
+  "name": "portfolio-local",
+  "version": "0.1.0",
+  "description": "Local project port management tool — track ports, detect liveness, avoid conflicts.",
+  "private": false,
+  "type": "module",
+  "keywords": ["port", "portfolio", "localhost", "devtools", "port-management"],
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crequency/Portfolio"
+  },
+  "bin": {
+    "portfolio": "./packages/server/dist/cli.cjs"
+  },
+  "files": [
+    "packages/server/dist/cli.cjs",
+    "packages/web/dist"
+  ],
   "scripts": {
     "dev": "concurrently -n server,web -c blue,green \"pnpm --filter @portfolio/server dev\" \"pnpm --filter @portfolio/web dev\"",
-    "build": "pnpm --filter @portfolio/shared build && pnpm --filter @portfolio/web build",
-    "start": "pnpm --filter @portfolio/server start",
+    "build": "pnpm --filter @portfolio/shared build && pnpm --filter @portfolio/server build && pnpm --filter @portfolio/web build",
+    "start": "node packages/server/dist/index.js",
     "lint": "pnpm -r lint"
   },
   "engines": {
