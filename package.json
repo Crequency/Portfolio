@@ -1,10 +1,16 @@
 {
   "name": "portfolio-local",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local project port management tool — track ports, detect liveness, avoid conflicts.",
   "private": false,
   "type": "module",
-  "keywords": ["port", "portfolio", "localhost", "devtools", "port-management"],
+  "keywords": [
+    "port",
+    "portfolio",
+    "localhost",
+    "devtools",
+    "port-management"
+  ],
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
