@@ -26,8 +26,8 @@ Portfolio 是一个本地运行的 Web Server 应用，提供一个树状可视�
 
 ### 开发与生产模式
 
-- **开发模式**：`packages/web` 通过 Vite 启动 dev server（默认 `:5173`），
-  `packages/server` 通过 `tsx watch` 启动（默认 `:3000`）。
+- **开发模式**：`packages/web` 通过 Vite 启动 dev server（默认 `:45321`），
+  `packages/server` 通过 `tsx watch` 启动（默认 `:45311`）。
   Vite 配置 proxy 将 `/api/*` 请求转发到 Express 后端，避免跨域问题。
 - **生产模式**：Express 在启动时 serve `packages/web` 构建产物（`dist/` 目录），
   前后端统一由端口 `35688` 提供服务。
