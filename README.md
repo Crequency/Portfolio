@@ -109,10 +109,10 @@ Portfolio/
 
 ### Data
 
-| Method | Path          | Description                              |
-| ------ | ------------- | ---------------------------------------- | ------------- |
-| `GET`  | `/api/export` | Export all data as JSON                  |
-| `POST` | `/api/import` | Import JSON data (`{ data, mode: "merge" | "replace" }`) |
+| Method | Path          | Description                                               |
+| ------ | ------------- | --------------------------------------------------------- |
+| `GET`  | `/api/export` | Export all data as JSON                                   |
+| `POST` | `/api/import` | Import JSON data (`{ data, mode: "merge" \| "replace" }`) |
 
 ### Response Format
 
