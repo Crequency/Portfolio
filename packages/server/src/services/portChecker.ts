@@ -10,69 +10,85 @@ export interface PortCheckResult {
   processName?: string;
 }
 
+const TIMEOUT = 5000;
+
 /**
  * Check if a port has a listening process.
- * Cross-platform: Windows (netstat), macOS (lsof), Linux (ss/lsof).
+ * Cross-platform with TCP connect fallback — never returns unknown.
  */
 export async function checkPort(port: number): Promise<PortCheckResult> {
   const platform = process.platform;
 
-  if (platform === 'win32') {
-    return checkPortWindows(port);
+  // Try platform-native detection first
+  let result: PortCheckResult;
+  try {
+    if (platform === 'win32') {
+      result = await checkPortWindows(port);
+    } else {
+      result = await checkPortUnix(port);
+    }
+  } catch (err) {
+    console.error(`[Portfolio] port check error (${platform}:${port}):`, (err as Error).message);
+    result = { status: 'unknown' };
   }
-  // macOS & Linux
-  return checkPortUnix(port);
+
+  // TCP connect fallback if native detection failed
+  if (result.status === 'unknown') {
+    const tcp = await checkPortTCP(port);
+    return { ...tcp, pid: undefined, processName: undefined };
+  }
+
+  return result;
 }
 
-// ── Windows ──
+// ── Windows (netstat -ano) ──
 
 async function checkPortWindows(port: number): Promise<PortCheckResult> {
-  try {
-    const { stdout } = await execFileAsync('netstat', ['-ano'], { timeout: 5000 });
-    const lines = stdout.split(/\r?\n/);
-    // Find line with LISTENING and our port (e.g. "0.0.0.0:3000" or "[::]:3000")
-    const matchLine = lines.find(
-      (l) => l.includes('LISTENING') && new RegExp(`:${port}\\b`).test(l),
-    );
-    if (!matchLine) {
-      return { status: 'stopped' };
-    }
+  // shell:true for better Windows compatibility
+  const { stdout } = await execFileAsync('netstat', ['-ano'], {
+    timeout: TIMEOUT,
+    shell: true,
+  });
 
-    // Extract PID (last column)
-    const parts = matchLine.trim().split(/\s+/);
-    const pid = parseInt(parts[parts.length - 1], 10);
-    if (isNaN(pid)) {
-      return { status: 'running' }; // found port but can't parse PID
-    }
+  const lines = stdout.split(/\r?\n/);
+  const portPattern = new RegExp(`:${port}\\b`);
 
-    // Get process name from PID
-    let processName: string | undefined;
-    try {
-      const { stdout: taskOut } = await execFileAsync(
-        'tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'],
-        { timeout: 3000 },
-      );
-      const m = taskOut.match(/^"([^"]+)"/m);
-      if (m) processName = m[1].replace(/\.exe$/i, '');
-    } catch {
-      // ignore
-    }
-
-    return { status: 'running', pid, processName };
-  } catch {
-    return { status: 'unknown' };
+  const matchLine = lines.find(
+    (l) => l.toUpperCase().includes('LISTENING') && portPattern.test(l),
+  );
+  if (!matchLine) {
+    return { status: 'stopped' };
   }
+
+  const parts = matchLine.trim().split(/\s+/);
+  const pid = parseInt(parts[parts.length - 1], 10);
+  if (isNaN(pid)) {
+    return { status: 'running' };
+  }
+
+  let processName: string | undefined;
+  try {
+    const { stdout: taskOut } = await execFileAsync(
+      'tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'],
+      { timeout: 3000, shell: true },
+    );
+    const m = taskOut.match(/^"([^"]+)"/m);
+    if (m) processName = m[1].replace(/\.exe$/i, '');
+  } catch {
+    // process name is optional
+  }
+
+  return { status: 'running', pid, processName };
 }
 
-// ── macOS / Linux ──
+// ── Unix (ss / lsof) ──
 
 async function checkPortUnix(port: number): Promise<PortCheckResult> {
   const isDarwin = process.platform === 'darwin';
 
-  // Linux: try ss first (fast, no root usually)
   if (!isDarwin) {
     try {
-      const { stdout } = await execFileAsync('ss', ['-tlnp'], { timeout: 5000 });
+      const { stdout } = await execFileAsync('ss', ['-tlnp'], { timeout: TIMEOUT });
       const lines = stdout.split('\n');
       for (const line of lines) {
         if (line.includes(`:${port}`)) {
@@ -87,15 +103,14 @@ async function checkPortUnix(port: number): Promise<PortCheckResult> {
       }
       return { status: 'stopped' };
     } catch {
-      // ss failed, fall through to lsof
+      // fall through to lsof
     }
   }
 
-  // macOS / Linux fallback: lsof
   try {
     const { stdout } = await execFileAsync(
       'lsof', ['-i', `:${port}`, '-t', '-sTCP:LISTEN'],
-      { timeout: 5000 },
+      { timeout: TIMEOUT },
     );
     const pids = stdout.trim().split('\n').filter(Boolean);
     if (pids.length > 0) {
@@ -108,9 +123,7 @@ async function checkPortUnix(port: number): Promise<PortCheckResult> {
             { timeout: 2000 },
           );
           processName = psOut.trim();
-        } catch {
-          // ignore
-        }
+        } catch { /* optional */ }
       }
       return { status: 'running', pid, processName };
     }
@@ -120,12 +133,8 @@ async function checkPortUnix(port: number): Promise<PortCheckResult> {
   }
 }
 
-// ── TCP fallback (no external commands) ──
+// ── TCP connect (last-resort fallback) ──
 
-/**
- * Lightweight TCP connect check as a last-resort fallback.
- * Used only if ss/lsof/netstat all fail.
- */
 export async function checkPortTCP(port: number): Promise<PortCheckResult> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -142,7 +151,7 @@ export async function checkPortTCP(port: number): Promise<PortCheckResult> {
     });
 
     socket.once('error', () => {
-      socket.destroy();
+      // ECONNREFUSED = port open but no listener = not running
       resolve({ status: 'stopped' });
     });
 
