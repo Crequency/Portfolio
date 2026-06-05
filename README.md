@@ -16,6 +16,8 @@
 - **Auto-backup** — rotating backups (up to 5) on every modification
 - **Quick open** — open a project's directory in File Explorer, VS Code, or terminal
 - **PWA support** — install as a standalone desktop window
+- **Cross-platform** — Windows, macOS, Linux (including WSL)
+- **npm package** — `npx portfolio-local` to run instantly, no clone needed
 - **Light / Dark / System theme**
 - **i18n** — English, Simplified Chinese, Japanese
 - **Drag-and-drop** reordering of projects and services
@@ -36,46 +38,68 @@
 ### Prerequisites
 
 - Node.js ≥ 18
-- pnpm
 
-### Development
+### Quick Start (npm)
 
 ```bash
+npx portfolio-local
+```
+
+Open `http://localhost:35688`. To install permanently:
+
+```bash
+npm i -g portfolio-local
+portfolio
+```
+
+Click the install button in Chrome's address bar to add Portfolio as a PWA standalone window.
+
+### Development (from source)
+
+```bash
+git clone git@github.com:Crequency/Portfolio.git
+cd Portfolio
 pnpm install
 pnpm dev          # Frontend :45321 + Backend :45311
 ```
 
 Open `http://localhost:45321`.
 
-### Production
+### Production Build (from source)
 
 ```bash
 pnpm build
 pnpm start        # Serves on :35688
 ```
 
-Open `http://localhost:35688`, then click the install button in Chrome's address bar to add Portfolio as a PWA standalone window.
+## Platform Support
+
+Portfolio runs on **Windows**, **macOS**, and **Linux** (including WSL). Port status detection uses native system commands per platform (`netstat`, `ss`, `lsof`) with a TCP connect fallback.
 
 ## Project Structure
 
 ```
 Portfolio/
+├── assets/
+│   └── logo.svg              # Project logo
 ├── packages/
-│   ├── shared/          # Type definitions (Project, Service, API types)
-│   ├── server/          # Express backend
+│   ├── shared/               # Type definitions (Project, Service, API types)
+│   ├── server/               # Express backend
 │   │   └── src/
-│   │       ├── routes/      # API route handlers
-│   │       ├── services/    # Storage, port checker, backup, open
-│   │       └── middleware/  # Validation, error handling
-│   └── web/             # React frontend
+│   │       ├── cli.ts            # npm CLI entry point
+│   │       ├── index.ts          # App factory + dev server
+│   │       ├── routes/           # API route handlers
+│   │       ├── services/         # Storage, port checker, backup, open
+│   │       └── middleware/       # Validation, error handling
+│   └── web/                  # React frontend
 │       └── src/
-│           ├── components/  # UI components (tree, modals, common, layout)
-│           ├── hooks/       # Custom hooks (projects, ping, latency, shortcuts)
-│           ├── lib/         # API client, theme provider
-│           ├── locales/     # i18n translation files (en, zh, ja)
-│           └── pages/       # Dashboard
+│           ├── components/       # UI components (tree, modals, common, layout)
+│           ├── hooks/            # Custom hooks (projects, ping, latency, shortcuts)
+│           ├── lib/              # API client, theme provider
+│           ├── locales/          # i18n translation files (en, zh, ja)
+│           └── pages/            # Dashboard
 ├── .develop/
-│   └── Requirements.md      # Full requirements document
+│   └── Requirements.md           # Full requirements document
 └── pnpm-workspace.yaml
 ```
 
