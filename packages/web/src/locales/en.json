@@ -1,0 +1,93 @@
+{
+  "nav": {
+    "title": "Portfolio",
+    "settings": "Settings"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "en": "English",
+    "zh": "简体中文",
+    "ja": "日本語"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "search": "Search projects or ports...",
+    "newProject": "New Project",
+    "checkAll": "Check All",
+    "noProjects": "No projects yet",
+    "noProjectsDesc": "Start by creating your first project to track its ports.",
+    "createFirst": "Create Project",
+    "noResults": "No results match your search."
+  },
+  "sidebar": {
+    "filters": "Filters",
+    "all": "All"
+  },
+  "project": {
+    "new": "New Project",
+    "edit": "Edit Project",
+    "deleteTitle": "Delete Project",
+    "deleteMsg": "This will permanently delete \"{{name}}\" and all {{count}} service(s) inside it. This action cannot be undone.",
+    "servicesCount_one": "{{count}} service",
+    "servicesCount_other": "{{count}} services",
+    "noServices": "No services yet. Click + to add one.",
+    "name": "Name",
+    "description": "Description",
+    "path": "Path",
+    "tags": "Tags",
+    "namePlaceholder": "My Project",
+    "descPlaceholder": "Optional description",
+    "pathPlaceholder": "/home/user/projects/my-app",
+    "tagsPlaceholder": "comma, separated",
+    "nameRequired": "Name *",
+    "openExplorer": "Open in explorer"
+  },
+  "service": {
+    "add": "Add Service",
+    "edit": "Edit Service",
+    "deleteTitle": "Delete Service",
+    "deleteMsg": "This will permanently delete the service \"{{name}}\".",
+    "to": "to {{project}}",
+    "in": "in {{project}}",
+    "name": "Name",
+    "port": "Port",
+    "portRange": "Port * (1-65535)",
+    "description": "Description",
+    "namePlaceholder": "web",
+    "portPlaceholder": "3000",
+    "descPlaceholder": "Optional",
+    "nameRequired": "Name *",
+    "checking": "checking",
+    "conflict": "Port {{port}} is already in use by another service. Saved anyway.",
+    "clickToCopy": "Click to copy port",
+    "openInTab": "Open in new tab",
+    "checkStatus": "Check status",
+    "editService": "Edit service",
+    "deleteService": "Delete service",
+    "addService": "Add service",
+    "editProject": "Edit project",
+    "deleteProject": "Delete project"
+  },
+  "settings": {
+    "title": "Settings",
+    "defaultOpenMethod": "Default open method",
+    "explorer": "File Explorer",
+    "code": "VS Code",
+    "terminal": "Terminal",
+    "checkInterval": "Auto-check interval (seconds, 0 = disabled)",
+    "export": "Export Data",
+    "import": "Import Data"
+  },
+  "ping": {
+    "disconnected": "Disconnected"
+  }
+}

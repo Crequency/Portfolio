@@ -1,0 +1,16 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"pnpm --filter @portfolio/server dev\" \"pnpm --filter @portfolio/web dev\"",
+    "build": "pnpm --filter @portfolio/shared build && pnpm --filter @portfolio/web build",
+    "start": "pnpm --filter @portfolio/server start",
+    "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
