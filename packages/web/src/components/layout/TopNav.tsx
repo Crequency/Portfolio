@@ -38,7 +38,10 @@ export function TopNav({ onSettingsClick }: TopNavProps) {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4">
-        <h1 className="text-lg font-bold tracking-tight">{t('nav.title')}</h1>
+        <div className="flex items-center gap-2.5">
+          <img src="/icon.svg" alt="" className="h-7 w-7" />
+          <h1 className="text-lg font-bold tracking-tight">{t('nav.title')}</h1>
+        </div>
         <div className="flex items-center gap-1">
           {/* Language toggle */}
           <button

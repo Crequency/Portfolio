@@ -10,12 +10,12 @@ export default defineConfig(({ mode }) => ({
       ? [
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
+          includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icon.svg'],
           manifest: {
             name: 'Portfolio',
             short_name: 'Portfolio',
             description: 'Local project port management tool',
-            theme_color: '#0f172a',
+            theme_color: '#4F46E5',
             background_color: '#ffffff',
             display: 'standalone',
             start_url: '/',
