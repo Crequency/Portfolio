@@ -8,20 +8,23 @@
 
 ## Features
 
-- **Tree visualization** — projects → services → ports hierarchy
+- **Tree & Card views** — toggle between detail list and compact card grid layout
 - **CRUD management** — create, edit, delete projects and their services
+- **Custom tag colors** — pre-define tags with colors; GitHub-style auto-computed background/text
+- **Collapsible tag filter** — sidebar with drag-to-reorder tags, tag manager
 - **Port conflict detection** — warns when two services claim the same port
-- **Process liveness check** — TCP connect check every 10s, with per-service latency measurement (1s interval)
+- **Process liveness check** — auto check every 10s, per-service TCP latency every 5s
 - **Import / Export** — backup and restore your port registry as JSON
 - **Auto-backup** — rotating backups (up to 5) on every modification
 - **Quick open** — open a project's directory in File Explorer, VS Code, or terminal
 - **PWA support** — install as a standalone desktop window
 - **Cross-platform** — Windows, macOS, Linux (including WSL)
 - **npm package** — `npx portfolio-local` to run instantly, no clone needed
-- **Light / Dark / System theme**
+- **Light / Dark / System theme** — theme-aware tag colors, custom scrollbar
 - **i18n** — English, Simplified Chinese, Japanese
 - **Drag-and-drop** reordering of projects and services
 - **Keyboard shortcuts** — `Ctrl+N` new project, `Ctrl+K` focus search, `Esc` close modals
+- **Latency cache** — survives view mode switches without data loss
 
 ## Tech Stack
 
@@ -93,9 +96,14 @@ Portfolio/
 │   │       └── middleware/       # Validation, error handling
 │   └── web/                  # React frontend
 │       └── src/
-│           ├── components/       # UI components (tree, modals, common, layout)
-│           ├── hooks/            # Custom hooks (projects, ping, latency, shortcuts)
-│           ├── lib/              # API client, theme provider
+│           ├── components/       # tree (ServiceItem, ServiceCard, ProjectCard),
+│           │                     #   modals (Create/Edit Project/Service, DeleteConfirm, TagManager),
+│           │                     #   common (StatusBadge, TagChip, LatencyChip, PingIndicator, SettingsDialog),
+│           │                     #   sidebar (TagSidebar), layout (TopNav)
+│           ├── hooks/            # useProjects, usePing, useServiceLatency, useDefinedTags,
+│           │                     #   useKeyboardShortcuts
+│           ├── lib/              # api (typed fetch client), theme (ThemeProvider),
+│           │                     #   tagColorUtils (color algorithm), utils (cn)
 │           ├── locales/          # i18n translation files (en, zh, ja)
 │           └── pages/            # Dashboard
 ├── .develop/
@@ -107,15 +115,15 @@ Portfolio/
 
 ### Projects
 
-| Method   | Path                     | Description                                      |
-| -------- | ------------------------ | ------------------------------------------------ |
-| `GET`    | `/api/projects`          | List all projects (`?search=` & `?tag=` filters) |
-| `POST`   | `/api/projects`          | Create project                                   |
-| `GET`    | `/api/projects/:id`      | Get project detail                               |
-| `PUT`    | `/api/projects/:id`      | Update project                                   |
-| `DELETE` | `/api/projects/:id`      | Delete project (cascading services)              |
-| `PUT`    | `/api/projects/reorder`  | Reorder projects (`{ projectIds: string[] }`)    |
-| `POST`   | `/api/projects/:id/open` | Open project path in explorer/code/terminal      |
+| Method   | Path                     | Description                                                      |
+| -------- | ------------------------ | ---------------------------------------------------------------- |
+| `GET`    | `/api/projects`          | List all projects (`?search=` by name/port, `?tag=` by tag name) |
+| `POST`   | `/api/projects`          | Create project                                                   |
+| `GET`    | `/api/projects/:id`      | Get project detail                                               |
+| `PUT`    | `/api/projects/:id`      | Update project                                                   |
+| `DELETE` | `/api/projects/:id`      | Delete project (cascading services)                              |
+| `PUT`    | `/api/projects/reorder`  | Reorder projects (`{ projectIds: string[] }`)                    |
+| `POST`   | `/api/projects/:id/open` | Open project path in explorer/code/terminal                      |
 
 ### Services
 
