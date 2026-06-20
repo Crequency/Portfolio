@@ -15,7 +15,7 @@ const textStyle: Record<PingState, string> = {
 
 export function PingIndicator() {
   const { t } = useTranslation();
-  const { latency, state } = usePing(3000);
+  const { latency, state } = usePing();
 
   return (
     <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1.5 text-xs select-none shadow-sm m-3">

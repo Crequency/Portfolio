@@ -10,12 +10,17 @@ export interface Service {
   order: number;
 }
 
+export interface Tag {
+  name: string;
+  color: string; // hex color, e.g. "#3b82f6"
+}
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
   path?: string;
-  tags: string[];
+  tags: Tag[];
   services: Service[];
   createdAt: string;
   updatedAt: string;
@@ -51,14 +56,14 @@ export interface CreateProjectBody {
   name: string;
   description?: string;
   path?: string;
-  tags?: string[];
+  tags?: Tag[];
 }
 
 export interface UpdateProjectBody {
   name?: string;
   description?: string;
   path?: string;
-  tags?: string[];
+  tags?: Tag[];
 }
 
 export interface CreateServiceBody {

@@ -9,12 +9,9 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
         <TopNav onSettingsClick={() => setShowSettings(true)} />
-        <div className="flex-1 flex flex-col">
-          <Dashboard showSettings={showSettings} onCloseSettings={() => setShowSettings(false)} />
-        </div>
-        {/* Bottom-left ping indicator */}
+        <Dashboard showSettings={showSettings} onCloseSettings={() => setShowSettings(false)} />
         <div className="fixed bottom-0 left-0 z-40">
           <PingIndicator />
         </div>

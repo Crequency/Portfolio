@@ -30,7 +30,15 @@
   },
   "sidebar": {
     "filters": "フィルター",
-    "all": "全て"
+    "all": "全て",
+    "manageTags": "タグ管理"
+  },
+  "tags": {
+    "manageTitle": "タグ管理",
+    "noDefined": "タグが未定義です。",
+    "addPlaceholder": "タグ名",
+    "add": "追加",
+    "done": "完了"
   },
   "project": {
     "new": "新規プロジェクト",

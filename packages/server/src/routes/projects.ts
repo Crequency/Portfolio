@@ -30,7 +30,7 @@ router.get(
 
     const tag = req.query.tag as string | undefined;
     if (tag) {
-      projects = projects.filter((p) => p.tags.includes(tag));
+      projects = projects.filter((p) => p.tags.some((t) => t.name === tag));
     }
 
     // Sort by order, services sorted by order

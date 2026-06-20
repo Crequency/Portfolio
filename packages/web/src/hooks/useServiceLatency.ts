@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { pingPort } from '@/lib/api.js';
 
-const INTERVAL_MS = 1000;
+const INTERVAL_MS = 5000;
+
+// Module-level cache: survives mount/unmount across view switches
+const cache = new Map<number, { latency: number | null; ts: number }>();
 
 export function useServiceLatency(port: number, status: 'running' | 'stopped' | 'unknown') {
-  const [latency, setLatency] = useState<number | null>(null);
+  const cached = cache.get(port)?.latency ?? null;
+  const [latency, setLatency] = useState<number | null>(cached);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -12,6 +16,7 @@ export function useServiceLatency(port: number, status: 'running' | 'stopped' | 
 
     if (status !== 'running') {
       setLatency(null);
+      cache.set(port, { latency: null, ts: Date.now() });
       return;
     }
 
@@ -21,10 +26,12 @@ export function useServiceLatency(port: number, status: 'running' | 'stopped' | 
         if (mountedRef.current) {
           setLatency(result.latency);
         }
+        cache.set(port, { latency: result.latency, ts: Date.now() });
       } catch {
         if (mountedRef.current) {
           setLatency(null);
         }
+        cache.set(port, { latency: null, ts: Date.now() });
       }
     }
 

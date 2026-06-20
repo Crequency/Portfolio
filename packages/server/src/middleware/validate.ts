@@ -22,8 +22,10 @@ export function validateProject(body: unknown): ValidationError[] {
     errors.push({ field: 'path', message: 'Path must be a string' });
   }
   if (b.tags !== undefined) {
-    if (!Array.isArray(b.tags) || b.tags.some((t: unknown) => typeof t !== 'string')) {
-      errors.push({ field: 'tags', message: 'Tags must be an array of strings' });
+    if (!Array.isArray(b.tags) || b.tags.some((t: unknown) =>
+      typeof t !== 'object' || !t || typeof (t as Record<string,unknown>).name !== 'string' || typeof (t as Record<string,unknown>).color !== 'string'
+    )) {
+      errors.push({ field: 'tags', message: 'Tags must be an array of { name: string, color: string }' });
     }
   }
   return errors;

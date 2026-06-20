@@ -30,7 +30,15 @@
   },
   "sidebar": {
     "filters": "Filters",
-    "all": "All"
+    "all": "All",
+    "manageTags": "Manage Tags"
+  },
+  "tags": {
+    "manageTitle": "Manage Tags",
+    "noDefined": "No tags defined yet.",
+    "addPlaceholder": "Tag name",
+    "add": "Add",
+    "done": "Done"
   },
   "project": {
     "new": "New Project",

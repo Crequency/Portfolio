@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Project, Service } from '@portfolio/shared';
 import { ServiceItem } from './ServiceItem.js';
 import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, FolderOpen, GripVertical } from 'lucide-react';
+import { TagChip } from '@/components/common/TagChip.js';
 
 interface ProjectCardProps {
   project: Project;
@@ -72,9 +73,7 @@ export function ProjectCard({
         {project.tags.length > 0 && (
           <span className="flex gap-1 ml-2">
             {project.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground">
-                {tag}
-              </span>
+              <TagChip key={typeof tag === 'string' ? tag : tag.name} tag={tag} />
             ))}
           </span>
         )}

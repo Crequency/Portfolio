@@ -30,7 +30,15 @@
   },
   "sidebar": {
     "filters": "筛选",
-    "all": "全部"
+    "all": "全部",
+    "manageTags": "管理标签"
+  },
+  "tags": {
+    "manageTitle": "管理标签",
+    "noDefined": "暂无预定义标签。",
+    "addPlaceholder": "标签名称",
+    "add": "添加",
+    "done": "完成"
   },
   "project": {
     "new": "新建项目",

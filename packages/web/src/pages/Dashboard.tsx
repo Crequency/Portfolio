@@ -1,6 +1,11 @@
 import { useState, useCallback, useEffect, useRef, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, LayoutList, LayoutGrid, FolderOpen, Pencil, Trash2, PanelLeftOpen } from 'lucide-react';
+import { ServiceCard } from '@/components/tree/ServiceCard.js';
+import { TagChip } from '@/components/common/TagChip.js';
+import { TagSidebar } from '@/components/sidebar/TagSidebar.js';
+import { TagManagerModal } from '@/components/modals/TagManagerModal.js';
+import { useDefinedTags } from '@/hooks/useDefinedTags.js';
 import { useProjects } from '@/hooks/useProjects.js';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts.js';
 import { checkAll as apiCheckAll } from '@/lib/api.js';
@@ -25,10 +30,13 @@ interface DashboardProps {
 
 export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
   const { t } = useTranslation();
-  const { projects, loading, tags, createProject, updateProject, deleteProject, createService, updateService, deleteService, refresh, reorderProjects, reorderServices } = useProjects();
+  const { projects, loading, createProject, updateProject, deleteProject, createService, updateService, deleteService, refresh, reorderProjects, reorderServices } = useProjects();
 
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showTagManager, setShowTagManager] = useState(false);
+  const { definedTags, addDefinedTag, removeDefinedTag } = useDefinedTags();
 
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -41,6 +49,9 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
     checkInterval: AUTO_CHECK_INTERVAL_MS,
   });
 
+  const [viewMode, setViewMode] = useState<'tree' | 'card'>(() => {
+    return (localStorage.getItem('portfolio-view') as 'tree' | 'card') || 'tree';
+  });
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
 
   const runCheck = useCallback(async () => {
@@ -181,7 +192,7 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
     );
   }
   if (selectedTag) {
-    filtered = filtered.filter((p) => p.tags.includes(selectedTag));
+    filtered = filtered.filter((p) => p.tags.some((t) => (typeof t === 'string' ? t : t.name) === selectedTag));
   }
 
   if (loading) {
@@ -193,30 +204,25 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-1 overflow-hidden">
       {projects.length > 0 && (
-        <aside className="w-48 shrink-0 border-r p-4 space-y-3 overflow-auto">
-          <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">{t('sidebar.filters')}</h3>
-          <button
-            onClick={() => setSelectedTag(null)}
-            className={`block w-full text-left text-sm rounded-md px-2 py-1 ${!selectedTag ? 'bg-accent font-medium' : 'hover:bg-accent/50 text-muted-foreground'}`}
-          >
-            {t('sidebar.all')} ({projects.length})
-          </button>
-          {tags.map((tg) => (
-            <button
-              key={tg}
-              onClick={() => setSelectedTag(tg)}
-              className={`block w-full text-left text-sm rounded-md px-2 py-1 ${selectedTag === tg ? 'bg-accent font-medium' : 'hover:bg-accent/50 text-muted-foreground'}`}
-            >
-              {tg}
-            </button>
-          ))}
-        </aside>
+        <TagSidebar
+          collapsed={sidebarCollapsed}
+          projectTags={projects.flatMap((p) => p.tags)}
+          selectedTag={selectedTag}
+          onSelectTag={setSelectedTag}
+          onManageTags={() => setShowTagManager(true)}
+        />
       )}
-
-      <main className="flex-1 flex flex-col overflow-auto">
+      <main className="flex-1 flex flex-col overflow-auto custom-scrollbar">
         <div className="flex items-center gap-3 px-4 py-3 border-b">
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
+            title="Toggle sidebar"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -226,6 +232,17 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <button
+            onClick={() => {
+              const next = viewMode === 'tree' ? 'card' : 'tree';
+              setViewMode(next);
+              localStorage.setItem('portfolio-view', next);
+            }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title={viewMode === 'tree' ? 'Card view' : 'List view'}
+          >
+            {viewMode === 'tree' ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}
+          </button>
           <button
             onClick={() => setShowCreateProject(true)}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
@@ -241,8 +258,71 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
             {t('common.noResults')}
           </div>
+        ) : viewMode === 'card' ? (
+          /* ── Card View ── */
+          <div className="flex-1 p-4 pb-20 overflow-auto custom-scrollbar">
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+            {filtered.map((p) => (
+              <div key={p.id} className="rounded-lg border bg-card">
+                {/* Project header — row 1: name + tags */}
+                <div className="flex items-center gap-2 px-4 py-2 border-b">
+                  <span className="font-semibold text-sm truncate">{p.name}</span>
+                  <span className="flex-1" />
+                  {p.tags.length > 0 && (
+                    <span className="flex gap-1 shrink-0">
+                      {p.tags.map((t) => (
+                        <TagChip key={typeof t === 'string' ? t : t.name} tag={t} />
+                      ))}
+                    </span>
+                  )}
+                </div>
+                {/* Row 2: services count + actions */}
+                <div className="flex items-center gap-2 px-4 py-1.5 border-b">
+                  <span className="text-xs text-muted-foreground">
+                    {p.services.length} service{p.services.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="flex-1" />
+                  <div className="flex items-center gap-0.5">
+                    {p.path && (
+                      <button onClick={() => handleOpenProject(p)} className="rounded p-1 hover:bg-accent" title="Open">
+                        <FolderOpen className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button onClick={() => setAddingServiceTo(p)} className="rounded p-1 hover:bg-accent" title="Add service">
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setEditingProject(p)} className="rounded p-1 hover:bg-accent" title="Edit project">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setDeleteTarget({ type: 'project', item: p })} className="rounded p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {/* Service cards */}
+                {p.services.length > 0 ? (
+                  <div className="flex flex-row flex-wrap items-start gap-2 p-3">
+                    {p.services.map((s) => (
+                      <ServiceCard
+                        key={s.id}
+                        service={s}
+                        hasConflict={conflictPorts.has(s.port)}
+                        checking={checkingIds.has(s.id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-xs text-muted-foreground">
+                    No services yet.
+                  </div>
+                )}
+              </div>
+            ))}
+            </div>
+          </div>
         ) : (
-          <div className="flex-1 p-4 space-y-3 overflow-auto">
+          /* ── Tree View (current) ── */
+          <div className="flex-1 p-4 pb-20 space-y-3 overflow-auto custom-scrollbar">
             {filtered.map((p, idx) => (
               <ProjectCard
                 key={p.id}
@@ -272,12 +352,14 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
         open={showCreateProject}
         onClose={() => setShowCreateProject(false)}
         onSave={createProject}
+        definedTags={definedTags}
       />
       <EditProjectModal
         open={!!editingProject}
         project={editingProject}
         onClose={() => setEditingProject(null)}
         onSave={updateProject}
+        definedTags={definedTags}
       />
       <CreateServiceModal
         open={!!addingServiceTo}
@@ -325,6 +407,13 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
         onImport={handleImport}
       />
       <CheckFab onCheck={runCheck} />
+      <TagManagerModal
+        open={showTagManager}
+        definedTags={definedTags}
+        onAdd={addDefinedTag}
+        onRemove={removeDefinedTag}
+        onClose={() => setShowTagManager(false)}
+      />
     </div>
   );
 }

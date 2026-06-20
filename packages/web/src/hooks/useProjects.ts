@@ -102,14 +102,10 @@ export function useProjects() {
     }
   }, [refresh]);
 
-  // Derive available tags
-  const tags = [...new Set(projects.flatMap((p) => p.tags))].sort();
-
   return {
     projects,
     loading,
     error,
-    tags,
     refresh,
     createProject,
     updateProject,

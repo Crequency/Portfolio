@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export type PingState = 'low' | 'high' | 'disconnected';
 
@@ -7,18 +7,41 @@ export interface PingResult {
   state: PingState;
 }
 
+const DISCONNECT_THRESHOLD = 1000; // ms — a single ping above this is a "miss"
+const CONSECUTIVE_MISSES = 3;      // consecutive misses before showing disconnected
+
 /**
  * Periodically ping /api/health and measure round-trip latency.
- * - < 100ms → low (green)
- * - 100–500ms → high (yellow)
- * - > 500ms or error → disconnected (red)
+ * Requires 3 consecutive pings > 1000ms (or errors) before showing "disconnected".
  */
-export function usePing(intervalMs: number = 3000): PingResult {
-  const [result, setResult] = useState<PingResult>({ latency: null, state: 'disconnected' });
+export function usePing(intervalMs: number = 7000): PingResult {
+  const [latency, setLatency] = useState<number | null>(null);
+  const [state, setState] = useState<PingState>('disconnected');
+  const missCount = useRef(0);
   const mountedRef = useRef(true);
+
+  const update = useCallback((ms: number | null) => {
+    const isMiss = ms === null || ms > DISCONNECT_THRESHOLD;
+    if (isMiss) {
+      missCount.current++;
+    } else {
+      missCount.current = 0;
+    }
+
+    const newState: PingState =
+      missCount.current >= CONSECUTIVE_MISSES
+        ? 'disconnected'
+        : ms !== null && ms < 100
+          ? 'low'
+          : 'high';
+
+      setLatency(ms);
+      setState(newState);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
+    missCount.current = 0;
 
     async function ping() {
       const start = performance.now();
@@ -26,20 +49,15 @@ export function usePing(intervalMs: number = 3000): PingResult {
         const res = await fetch('/api/health');
         if (!mountedRef.current) return;
         if (res.ok) {
-          const latency = Math.round(performance.now() - start);
-          const state: PingState = latency < 100 ? 'low' : latency < 500 ? 'high' : 'disconnected';
-          setResult({ latency, state });
+          update(Math.round(performance.now() - start));
         } else {
-          setResult({ latency: null, state: 'disconnected' });
+          update(null);
         }
       } catch {
-        if (mountedRef.current) {
-          setResult({ latency: null, state: 'disconnected' });
-        }
+        if (mountedRef.current) update(null);
       }
     }
 
-    // Ping immediately, then on interval
     ping();
     const id = setInterval(ping, intervalMs);
 
@@ -47,7 +65,7 @@ export function usePing(intervalMs: number = 3000): PingResult {
       mountedRef.current = false;
       clearInterval(id);
     };
-  }, [intervalMs]);
+  }, [intervalMs, update]);
 
-  return result;
+  return { latency, state };
 }
