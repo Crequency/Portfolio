@@ -1,6 +1,6 @@
 {
   "name": "portfolio-local",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Local project port management tool — track ports, detect liveness, avoid conflicts.",
   "private": false,
   "type": "module",
