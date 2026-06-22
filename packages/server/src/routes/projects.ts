@@ -131,6 +131,7 @@ router.put(
     if (req.body.description !== undefined) project.description = req.body.description;
     if (req.body.path !== undefined) project.path = req.body.path;
     if (req.body.tags !== undefined) project.tags = req.body.tags;
+    if (req.body.previewServiceId !== undefined) project.previewServiceId = req.body.previewServiceId;
     project.updatedAt = new Date().toISOString();
 
     await saveData(data);

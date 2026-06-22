@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, LayoutList, LayoutGrid, FolderOpen, Pencil, Trash2, PanelLeftOpen } from 'lucide-react';
+import { Search, Plus, LayoutList, LayoutGrid, FolderOpen, Pencil, Trash2, PanelLeftOpen, MonitorPlay } from 'lucide-react';
 import { ServiceCard } from '@/components/tree/ServiceCard.js';
+import { PreviewPanel } from '@/components/tree/PreviewPanel.js';
 import { TagChip } from '@/components/common/TagChip.js';
 import { TagSidebar } from '@/components/sidebar/TagSidebar.js';
 import { TagManagerModal } from '@/components/modals/TagManagerModal.js';
@@ -36,6 +37,7 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
+  const [expandedPreviews, setExpandedPreviews] = useState<Set<string>>(new Set());
   const { definedTags, addDefinedTag, removeDefinedTag } = useDefinedTags();
 
   const [showCreateProject, setShowCreateProject] = useState(false);
@@ -244,6 +246,20 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
             {viewMode === 'tree' ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}
           </button>
           <button
+            onClick={() => {
+              const anyExpanded = expandedPreviews.size > 0;
+              if (anyExpanded) {
+                setExpandedPreviews(new Set());
+              } else {
+                setExpandedPreviews(new Set(projects.filter((p) => p.previewServiceId).map((p) => p.id)));
+              }
+            }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title="Toggle Previews"
+          >
+            <MonitorPlay className="h-4 w-4" />
+          </button>
+          <button
             onClick={() => setShowCreateProject(true)}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
           >
@@ -263,7 +279,7 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
           <div className="flex-1 p-4 pb-20 overflow-auto custom-scrollbar">
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
             {filtered.map((p) => (
-              <div key={p.id} className="rounded-lg border bg-card">
+              <div key={p.id} className="rounded-lg border bg-card flex flex-col">
                 {/* Project header — row 1: name + tags */}
                 <div className="flex items-center gap-2 px-4 py-2 border-b">
                   <span className="font-semibold text-sm truncate">{p.name}</span>
@@ -308,6 +324,11 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
                         service={s}
                         hasConflict={conflictPorts.has(s.port)}
                         checking={checkingIds.has(s.id)}
+                        isPreview={p.previewServiceId === s.id}
+                        onSetPreview={() => {
+                          const newId = p.previewServiceId === s.id ? null : s.id;
+                          updateProject(p.id, { previewServiceId: newId });
+                        }}
                       />
                     ))}
                   </div>
@@ -316,6 +337,22 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
                     No services yet.
                   </div>
                 )}
+                <PreviewPanel
+                  port={
+                    p.previewServiceId
+                      ? p.services.find((s) => s.id === p.previewServiceId)?.port ?? null
+                      : null
+                  }
+                  expanded={expandedPreviews.has(p.id)}
+                  onToggle={() => {
+                    setExpandedPreviews((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(p.id)) next.delete(p.id);
+                      else next.add(p.id);
+                      return next;
+                    });
+                  }}
+                />
               </div>
             ))}
             </div>

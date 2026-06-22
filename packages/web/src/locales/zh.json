@@ -77,6 +77,7 @@
     "checking": "检测中",
     "conflict": "端口 {{port}} 已被其他服务占用，已保存。",
     "clickToCopy": "点击复制端口号",
+    "rightClickPreview": "右键设为预览",
     "openInTab": "在新标签页打开",
     "checkStatus": "检测状态",
     "editService": "编辑服务",

@@ -22,6 +22,7 @@ export interface Project {
   path?: string;
   tags: Tag[];
   services: Service[];
+  previewServiceId?: string;
   createdAt: string;
   updatedAt: string;
   order: number;
@@ -64,6 +65,7 @@ export interface UpdateProjectBody {
   description?: string;
   path?: string;
   tags?: Tag[];
+  previewServiceId?: string | null;
 }
 
 export interface CreateServiceBody {

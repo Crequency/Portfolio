@@ -77,6 +77,7 @@
     "checking": "確認中",
     "conflict": "ポート {{port}} は既に他のサービスで使用されています。保存しました。",
     "clickToCopy": "クリックでポートをコピー",
+    "rightClickPreview": "右クリックでプレビューに設定",
     "openInTab": "新しいタブで開く",
     "checkStatus": "ステータス確認",
     "editService": "サービス編集",
