@@ -98,5 +98,8 @@
   },
   "ping": {
     "disconnected": "Disconnected"
+  },
+  "preview": {
+    "clickToView": "Click to view live preview"
   }
 }

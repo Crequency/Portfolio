@@ -98,5 +98,8 @@
   },
   "ping": {
     "disconnected": "切断"
+  },
+  "preview": {
+    "clickToView": "クリックしてライブプレビューを表示"
   }
 }

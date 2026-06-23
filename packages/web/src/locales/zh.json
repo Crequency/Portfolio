@@ -98,5 +98,8 @@
   },
   "ping": {
     "disconnected": "无连接"
+  },
+  "preview": {
+    "clickToView": "点击查看实时预览"
   }
 }

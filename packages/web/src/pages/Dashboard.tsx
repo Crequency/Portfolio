@@ -1,26 +1,44 @@
-import { useState, useCallback, useEffect, useRef, type DragEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Search, Plus, LayoutList, LayoutGrid, FolderOpen, Pencil, Trash2, PanelLeftOpen, MonitorPlay } from 'lucide-react';
-import { ServiceCard } from '@/components/tree/ServiceCard.js';
-import { PreviewPanel } from '@/components/tree/PreviewPanel.js';
-import { TagChip } from '@/components/common/TagChip.js';
-import { TagSidebar } from '@/components/sidebar/TagSidebar.js';
-import { TagManagerModal } from '@/components/modals/TagManagerModal.js';
-import { useDefinedTags } from '@/hooks/useDefinedTags.js';
-import { useProjects } from '@/hooks/useProjects.js';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts.js';
-import { checkAll as apiCheckAll } from '@/lib/api.js';
-import { openProject } from '@/lib/api.js';
-import { ProjectCard } from '@/components/tree/ProjectCard.js';
-import { EmptyState } from '@/components/common/EmptyState.js';
-import { SettingsDialog } from '@/components/common/SettingsDialog.js';
-import { CreateProjectModal } from '@/components/modals/CreateProjectModal.js';
-import { EditProjectModal } from '@/components/modals/EditProjectModal.js';
-import { CreateServiceModal } from '@/components/modals/CreateServiceModal.js';
-import { EditServiceModal } from '@/components/modals/EditServiceModal.js';
-import { DeleteConfirmDialog } from '@/components/modals/DeleteConfirmDialog.js';
-import { CheckFab } from '@/components/common/CheckFab.js';
-import type { Project, Service } from '@portfolio/shared';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type DragEvent,
+} from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Search,
+  Plus,
+  LayoutList,
+  LayoutGrid,
+  FolderOpen,
+  Pencil,
+  Trash2,
+  PanelLeftOpen,
+  MonitorPlay,
+  Zap,
+  ZapOff,
+} from "lucide-react";
+import { ServiceCard } from "@/components/tree/ServiceCard.js";
+import { PreviewPanel } from "@/components/tree/PreviewPanel.js";
+import { TagChip } from "@/components/common/TagChip.js";
+import { TagSidebar } from "@/components/sidebar/TagSidebar.js";
+import { TagManagerModal } from "@/components/modals/TagManagerModal.js";
+import { useDefinedTags } from "@/hooks/useDefinedTags.js";
+import { useProjects } from "@/hooks/useProjects.js";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts.js";
+import { checkAll as apiCheckAll } from "@/lib/api.js";
+import { openProject } from "@/lib/api.js";
+import { ProjectCard } from "@/components/tree/ProjectCard.js";
+import { EmptyState } from "@/components/common/EmptyState.js";
+import { SettingsDialog } from "@/components/common/SettingsDialog.js";
+import { CreateProjectModal } from "@/components/modals/CreateProjectModal.js";
+import { EditProjectModal } from "@/components/modals/EditProjectModal.js";
+import { CreateServiceModal } from "@/components/modals/CreateServiceModal.js";
+import { EditServiceModal } from "@/components/modals/EditServiceModal.js";
+import { DeleteConfirmDialog } from "@/components/modals/DeleteConfirmDialog.js";
+import { CheckFab } from "@/components/common/CheckFab.js";
+import type { Project, Service } from "@portfolio/shared";
 
 const AUTO_CHECK_INTERVAL_MS = 10_000;
 
@@ -31,39 +49,79 @@ interface DashboardProps {
 
 export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
   const { t } = useTranslation();
-  const { projects, loading, createProject, updateProject, deleteProject, createService, updateService, deleteService, refresh, reorderProjects, reorderServices } = useProjects();
+  const {
+    projects,
+    loading,
+    createProject,
+    updateProject,
+    deleteProject,
+    createService,
+    updateService,
+    deleteService,
+    refresh,
+    reorderProjects,
+    reorderServices,
+  } = useProjects();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
-  const [expandedPreviews, setExpandedPreviews] = useState<Set<string>>(new Set());
+  const [expandedPreviews, setExpandedPreviews] = useState<Set<string>>(
+    new Set(),
+  );
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const [backendPort, setBackendPort] = useState<number | null>(null);
+
+  useEffect(() => {
+    import("@/lib/api.js").then(({ getBackendPort }) =>
+      getBackendPort()
+        .then(({ port }) => setBackendPort(port))
+        .catch(() => setBackendPort(45311)),
+    );
+  }, []);
   const { definedTags, addDefinedTag, removeDefinedTag } = useDefinedTags();
 
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [addingServiceTo, setAddingServiceTo] = useState<Project | null>(null);
-  const [editingService, setEditingService] = useState<{ service: Service; project: Project } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'project'; item: Project } | { type: 'service'; item: Service; project: Project } | null>(null);
+  const [editingService, setEditingService] = useState<{
+    service: Service;
+    project: Project;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: "project"; item: Project }
+    | { type: "service"; item: Service; project: Project }
+    | null
+  >(null);
 
   const [settings, setSettings] = useState({
-    defaultOpenMethod: 'explorer',
+    defaultOpenMethod: "explorer",
     checkInterval: AUTO_CHECK_INTERVAL_MS,
   });
 
-  const [viewMode, setViewMode] = useState<'tree' | 'card'>(() => {
-    return (localStorage.getItem('portfolio-view') as 'tree' | 'card') || 'tree';
+  const [viewMode, setViewMode] = useState<"tree" | "card">(() => {
+    return (
+      (localStorage.getItem("portfolio-view") as "tree" | "card") || "tree"
+    );
+  });
+  const [powerSaving, setPowerSaving] = useState(() => {
+    return localStorage.getItem("portfolio-power-saving") !== "false";
   });
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
 
   const runCheck = useCallback(async () => {
-    const allIds = new Set(projects.flatMap((p) => p.services.map((s) => s.id)));
+    const allIds = new Set(
+      projects.flatMap((p) => p.services.map((s) => s.id)),
+    );
     if (allIds.size === 0) return;
     setCheckingIds(allIds);
     try {
       await apiCheckAll();
       await refresh();
-    } catch { /* silently ignore */ }
+    } catch {
+      /* silently ignore */
+    }
     setCheckingIds(new Set());
   }, [projects, refresh]);
 
@@ -80,43 +138,49 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
     };
   }, [hasServices, runCheck]);
 
-  const handleOpenProject = useCallback(async (project: Project) => {
-    if (!project.path) return;
-    try {
-      await openProject(project.id, settings.defaultOpenMethod);
-    } catch (err) {
-      console.error('Failed to open project:', err);
-    }
-  }, [settings.defaultOpenMethod]);
+  const handleOpenProject = useCallback(
+    async (project: Project) => {
+      if (!project.path) return;
+      try {
+        await openProject(project.id, settings.defaultOpenMethod);
+      } catch (err) {
+        console.error("Failed to open project:", err);
+      }
+    },
+    [settings.defaultOpenMethod],
+  );
 
   const handleExport = useCallback(async () => {
-    const res = await fetch('/api/export');
+    const res = await fetch("/api/export");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'portfolio-export.json';
+    a.download = "portfolio-export.json";
     a.click();
     URL.revokeObjectURL(url);
   }, []);
 
-  const handleImport = useCallback(async (file: File) => {
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      await fetch('/api/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data, mode: 'merge' }),
-      });
-      await refresh();
-    } catch (err) {
-      console.error('Import failed:', err);
-    }
-  }, [refresh]);
+  const handleImport = useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        await fetch("/api/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data, mode: "merge" }),
+        });
+        await refresh();
+      } catch (err) {
+        console.error("Import failed:", err);
+      }
+    },
+    [refresh],
+  );
 
   useKeyboardShortcuts({
-    'escape': () => {
+    escape: () => {
       setShowCreateProject(false);
       setEditingProject(null);
       setAddingServiceTo(null);
@@ -124,54 +188,69 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
       setDeleteTarget(null);
       onCloseSettings();
     },
-    'ctrl+k': () => {
-      document.querySelector<HTMLInputElement>('input[placeholder]')?.focus();
+    "ctrl+k": () => {
+      document.querySelector<HTMLInputElement>("input[placeholder]")?.focus();
     },
-    'ctrl+n': () => setShowCreateProject(true),
+    "ctrl+n": () => setShowCreateProject(true),
   });
 
   // Drag-and-drop
   const dragProjectIndex = useRef<number | null>(null);
-  const dragServiceInfo = useRef<{ projectId: string; index: number } | null>(null);
+  const dragServiceInfo = useRef<{ projectId: string; index: number } | null>(
+    null,
+  );
 
   const handleProjectDragStart = useCallback((e: DragEvent, index: number) => {
     dragProjectIndex.current = index;
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   }, []);
 
-  const handleProjectDragOver = useCallback((_e: DragEvent, _index: number) => {}, []);
+  const handleProjectDragOver = useCallback(
+    (_e: DragEvent, _index: number) => {},
+    [],
+  );
 
-  const handleProjectDrop = useCallback((_e: DragEvent, targetIndex: number) => {
-    const from = dragProjectIndex.current;
-    if (from === null || from === targetIndex) return;
-    const newIds = projects.map((p) => p.id);
-    const [moved] = newIds.splice(from, 1);
-    newIds.splice(targetIndex, 0, moved);
-    reorderProjects(newIds);
-    dragProjectIndex.current = null;
-  }, [projects, reorderProjects]);
+  const handleProjectDrop = useCallback(
+    (_e: DragEvent, targetIndex: number) => {
+      const from = dragProjectIndex.current;
+      if (from === null || from === targetIndex) return;
+      const newIds = projects.map((p) => p.id);
+      const [moved] = newIds.splice(from, 1);
+      newIds.splice(targetIndex, 0, moved);
+      reorderProjects(newIds);
+      dragProjectIndex.current = null;
+    },
+    [projects, reorderProjects],
+  );
 
-  const handleServiceDragStart = useCallback((e: DragEvent, projectId: string, index: number) => {
-    dragServiceInfo.current = { projectId, index };
-    e.dataTransfer.effectAllowed = 'move';
-    e.stopPropagation();
-  }, []);
+  const handleServiceDragStart = useCallback(
+    (e: DragEvent, projectId: string, index: number) => {
+      dragServiceInfo.current = { projectId, index };
+      e.dataTransfer.effectAllowed = "move";
+      e.stopPropagation();
+    },
+    [],
+  );
 
   const handleServiceDragOver = useCallback((e: DragEvent) => {
     e.stopPropagation();
   }, []);
 
-  const handleServiceDrop = useCallback((e: DragEvent, projectId: string, targetIndex: number) => {
-    const info = dragServiceInfo.current;
-    if (!info || info.projectId !== projectId || info.index === targetIndex) return;
-    const project = projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const newIds = project.services.map((s) => s.id);
-    const [moved] = newIds.splice(info.index, 1);
-    newIds.splice(targetIndex, 0, moved);
-    reorderServices(projectId, newIds);
-    dragServiceInfo.current = null;
-  }, [projects, reorderServices]);
+  const handleServiceDrop = useCallback(
+    (e: DragEvent, projectId: string, targetIndex: number) => {
+      const info = dragServiceInfo.current;
+      if (!info || info.projectId !== projectId || info.index === targetIndex)
+        return;
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) return;
+      const newIds = project.services.map((s) => s.id);
+      const [moved] = newIds.splice(info.index, 1);
+      newIds.splice(targetIndex, 0, moved);
+      reorderServices(projectId, newIds);
+      dragServiceInfo.current = null;
+    },
+    [projects, reorderServices],
+  );
 
   const portCounts = new Map<number, number>();
   for (const p of projects) {
@@ -190,17 +269,21 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
     filtered = filtered.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        p.services.some((s) => s.name.toLowerCase().includes(q) || String(s.port).includes(q)),
+        p.services.some(
+          (s) => s.name.toLowerCase().includes(q) || String(s.port).includes(q),
+        ),
     );
   }
   if (selectedTag) {
-    filtered = filtered.filter((p) => p.tags.some((t) => (typeof t === 'string' ? t : t.name) === selectedTag));
+    filtered = filtered.filter((p) =>
+      p.tags.some((t) => (typeof t === "string" ? t : t.name) === selectedTag),
+    );
   }
 
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground">{t('common.loading')}</p>
+        <p className="text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -229,21 +312,25 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               className="w-full rounded-md border bg-background pl-8 pr-3 py-2 text-sm"
-              placeholder={t('common.search')}
+              placeholder={t("common.search")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <button
             onClick={() => {
-              const next = viewMode === 'tree' ? 'card' : 'tree';
+              const next = viewMode === "tree" ? "card" : "tree";
               setViewMode(next);
-              localStorage.setItem('portfolio-view', next);
+              localStorage.setItem("portfolio-view", next);
             }}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            title={viewMode === 'tree' ? 'Card view' : 'List view'}
+            title={viewMode === "tree" ? "Card view" : "List view"}
           >
-            {viewMode === 'tree' ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}
+            {viewMode === "tree" ? (
+              <LayoutGrid className="h-4 w-4" />
+            ) : (
+              <LayoutList className="h-4 w-4" />
+            )}
           </button>
           <button
             onClick={() => {
@@ -251,7 +338,11 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
               if (anyExpanded) {
                 setExpandedPreviews(new Set());
               } else {
-                setExpandedPreviews(new Set(projects.filter((p) => p.previewServiceId).map((p) => p.id)));
+                setExpandedPreviews(
+                  new Set(
+                    projects.filter((p) => p.previewServiceId).map((p) => p.id),
+                  ),
+                );
               }
             }}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -260,11 +351,26 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
             <MonitorPlay className="h-4 w-4" />
           </button>
           <button
+            onClick={() => {
+              const next = !powerSaving;
+              setPowerSaving(next);
+              localStorage.setItem("portfolio-power-saving", String(next));
+            }}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground ${powerSaving ? "text-green-500" : ""}`}
+            title={powerSaving ? "Power Saving: ON" : "Power Saving: OFF"}
+          >
+            {powerSaving ? (
+              <Zap className="h-4 w-4" />
+            ) : (
+              <ZapOff className="h-4 w-4" />
+            )}
+          </button>
+          <button
             onClick={() => setShowCreateProject(true)}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            {t('common.newProject')}
+            {t("common.newProject")}
           </button>
         </div>
 
@@ -272,89 +378,126 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
           <EmptyState onCreateProject={() => setShowCreateProject(true)} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
-            {t('common.noResults')}
+            {t("common.noResults")}
           </div>
-        ) : viewMode === 'card' ? (
+        ) : viewMode === "card" ? (
           /* ── Card View ── */
           <div className="flex-1 p-4 pb-20 overflow-auto custom-scrollbar">
-            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-            {filtered.map((p) => (
-              <div key={p.id} className="rounded-lg border bg-card flex flex-col">
-                {/* Project header — row 1: name + tags */}
-                <div className="flex items-center gap-2 px-4 py-2 border-b">
-                  <span className="font-semibold text-sm truncate">{p.name}</span>
-                  <span className="flex-1" />
-                  {p.tags.length > 0 && (
-                    <span className="flex gap-1 shrink-0">
-                      {p.tags.map((t) => (
-                        <TagChip key={typeof t === 'string' ? t : t.name} tag={t} />
-                      ))}
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              }}
+            >
+              {filtered.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-lg border bg-card flex flex-col group"
+                >
+                  {/* Project header — row 1: name + tags */}
+                  <div className="flex items-center gap-2 px-4 py-2 border-b">
+                    <span className="font-semibold text-sm truncate">
+                      {p.name}
                     </span>
-                  )}
-                </div>
-                {/* Row 2: services count + actions */}
-                <div className="flex items-center gap-2 px-4 py-1.5 border-b">
-                  <span className="text-xs text-muted-foreground">
-                    {p.services.length} service{p.services.length !== 1 ? 's' : ''}
-                  </span>
-                  <span className="flex-1" />
-                  <div className="flex items-center gap-0.5">
-                    {p.path && (
-                      <button onClick={() => handleOpenProject(p)} className="rounded p-1 hover:bg-accent" title="Open">
-                        <FolderOpen className="h-3.5 w-3.5" />
-                      </button>
+                    <span className="flex-1" />
+                    {p.tags.length > 0 && (
+                      <span className="flex gap-1 shrink-0">
+                        {p.tags.map((t) => (
+                          <TagChip
+                            key={typeof t === "string" ? t : t.name}
+                            tag={t}
+                          />
+                        ))}
+                      </span>
                     )}
-                    <button onClick={() => setAddingServiceTo(p)} className="rounded p-1 hover:bg-accent" title="Add service">
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => setEditingProject(p)} className="rounded p-1 hover:bg-accent" title="Edit project">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => setDeleteTarget({ type: 'project', item: p })} className="rounded p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                   </div>
+                  {/* Row 2: services count + actions */}
+                  <div className="flex items-center gap-2 px-4 py-1.5 border-b">
+                    <span className="text-xs text-muted-foreground">
+                      {p.services.length} service
+                      {p.services.length !== 1 ? "s" : ""}
+                    </span>
+                    <span className="flex-1" />
+                    <div className="flex items-center gap-0.5">
+                      {p.path && (
+                        <button
+                          onClick={() => handleOpenProject(p)}
+                          className="rounded p-1 hover:bg-accent"
+                          title="Open"
+                        >
+                          <FolderOpen className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setAddingServiceTo(p)}
+                        className="rounded p-1 hover:bg-accent"
+                        title="Add service"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingProject(p)}
+                        className="rounded p-1 hover:bg-accent"
+                        title="Edit project"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDeleteTarget({ type: "project", item: p })
+                        }
+                        className="rounded p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Service cards */}
+                  {p.services.length > 0 ? (
+                    <div className="flex flex-row flex-wrap items-start gap-2 p-3">
+                      {p.services.map((s) => (
+                        <ServiceCard
+                          key={s.id}
+                          service={s}
+                          hasConflict={conflictPorts.has(s.port)}
+                          checking={checkingIds.has(s.id)}
+                          isPreview={p.previewServiceId === s.id}
+                          onSetPreview={() => {
+                            const newId =
+                              p.previewServiceId === s.id ? null : s.id;
+                            updateProject(p.id, { previewServiceId: newId });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 text-xs text-muted-foreground">
+                      No services yet.
+                    </div>
+                  )}
+                  <PreviewPanel
+                    port={
+                      p.previewServiceId
+                        ? (p.services.find((s) => s.id === p.previewServiceId)
+                            ?.port ?? null)
+                        : null
+                    }
+                    expanded={expandedPreviews.has(p.id)}
+                    onToggle={() => {
+                      setExpandedPreviews((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(p.id)) next.delete(p.id);
+                        else next.add(p.id);
+                        return next;
+                      });
+                    }}
+                    refreshKey={previewRefreshKey}
+                    backendPort={backendPort}
+                    powerSaving={powerSaving}
+                    onRefreshAll={() => setPreviewRefreshKey((k) => k + 1)}
+                  />
                 </div>
-                {/* Service cards */}
-                {p.services.length > 0 ? (
-                  <div className="flex flex-row flex-wrap items-start gap-2 p-3">
-                    {p.services.map((s) => (
-                      <ServiceCard
-                        key={s.id}
-                        service={s}
-                        hasConflict={conflictPorts.has(s.port)}
-                        checking={checkingIds.has(s.id)}
-                        isPreview={p.previewServiceId === s.id}
-                        onSetPreview={() => {
-                          const newId = p.previewServiceId === s.id ? null : s.id;
-                          updateProject(p.id, { previewServiceId: newId });
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 text-xs text-muted-foreground">
-                    No services yet.
-                  </div>
-                )}
-                <PreviewPanel
-                  port={
-                    p.previewServiceId
-                      ? p.services.find((s) => s.id === p.previewServiceId)?.port ?? null
-                      : null
-                  }
-                  expanded={expandedPreviews.has(p.id)}
-                  onToggle={() => {
-                    setExpandedPreviews((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(p.id)) next.delete(p.id);
-                      else next.add(p.id);
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         ) : (
@@ -369,10 +512,14 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
                 index={idx}
                 onAddService={() => setAddingServiceTo(p)}
                 onEdit={() => setEditingProject(p)}
-                onDelete={() => setDeleteTarget({ type: 'project', item: p })}
+                onDelete={() => setDeleteTarget({ type: "project", item: p })}
                 onOpen={() => handleOpenProject(p)}
-                onEditService={(s) => setEditingService({ service: s, project: p })}
-                onDeleteService={(s) => setDeleteTarget({ type: 'service', item: s, project: p })}
+                onEditService={(s) =>
+                  setEditingService({ service: s, project: p })
+                }
+                onDeleteService={(s) =>
+                  setDeleteTarget({ type: "service", item: s, project: p })
+                }
                 onDragStart={handleProjectDragStart}
                 onDragOver={handleProjectDragOver}
                 onDrop={handleProjectDrop}
@@ -400,32 +547,53 @@ export function Dashboard({ showSettings, onCloseSettings }: DashboardProps) {
       />
       <CreateServiceModal
         open={!!addingServiceTo}
-        projectName={addingServiceTo?.name || ''}
+        projectName={addingServiceTo?.name || ""}
         onClose={() => setAddingServiceTo(null)}
-        onSave={(body) => addingServiceTo ? createService(addingServiceTo.id, body) : Promise.resolve()}
+        onSave={(body) =>
+          addingServiceTo
+            ? createService(addingServiceTo.id, body)
+            : Promise.resolve()
+        }
       />
       <EditServiceModal
         open={!!editingService}
         service={editingService?.service || null}
-        projectName={editingService?.project?.name || ''}
+        projectName={editingService?.project?.name || ""}
         onClose={() => setEditingService(null)}
         onSave={(body) =>
           editingService
-            ? updateService(editingService.project.id, editingService.service.id, body)
+            ? updateService(
+                editingService.project.id,
+                editingService.service.id,
+                body,
+              )
             : Promise.resolve()
         }
       />
       <DeleteConfirmDialog
         open={!!deleteTarget}
-        title={deleteTarget?.type === 'project' ? t('project.deleteTitle') : t('service.deleteTitle')}
+        title={
+          deleteTarget?.type === "project"
+            ? t("project.deleteTitle")
+            : t("service.deleteTitle")
+        }
         message={
-          deleteTarget?.type === 'project'
-            ? t('project.deleteMsg', { name: deleteTarget.item.name, count: deleteTarget.item.services.length })
-            : t('service.deleteMsg', { name: deleteTarget && 'item' in deleteTarget ? (deleteTarget as { type: 'service'; item: Service }).item.name : '' })
+          deleteTarget?.type === "project"
+            ? t("project.deleteMsg", {
+                name: deleteTarget.item.name,
+                count: deleteTarget.item.services.length,
+              })
+            : t("service.deleteMsg", {
+                name:
+                  deleteTarget && "item" in deleteTarget
+                    ? (deleteTarget as { type: "service"; item: Service }).item
+                        .name
+                    : "",
+              })
         }
         onConfirm={async () => {
           if (!deleteTarget) return;
-          if (deleteTarget.type === 'project') {
+          if (deleteTarget.type === "project") {
             await deleteProject(deleteTarget.item.id);
           } else {
             await deleteService(deleteTarget.project.id, deleteTarget.item.id);
