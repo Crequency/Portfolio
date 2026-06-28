@@ -10,6 +10,12 @@
 
 - **Tree & Card views** — toggle between detail list and compact card grid layout
 - **CRUD management** — create, edit, delete projects and their services
+- **Preview panel** — zoomed-out iframe preview per project, toggle with MonitorPlay button
+- **Power saving mode** — screenshot service pages via html-to-image, replace live iframe with static image
+- **Preview mask** — hover over screenshot shows eye icon with i18n prompt, click to view live iframe
+- **5s revert countdown** — mouse-leave timer before iframe switches back to image
+- **Hostname proxy** — `pPORT.localhost` transparently proxies to `localhost:PORT`, with WebSocket support
+- **Right-click preview** — right-click a service chip to set it as the project's preview
 - **Custom tag colors** — pre-define tags with colors; GitHub-style auto-computed background/text
 - **Collapsible tag filter** — sidebar with drag-to-reorder tags, tag manager
 - **Port conflict detection** — warns when two services claim the same port
@@ -84,30 +90,33 @@ Portfolio runs on **Windows**, **macOS**, and **Linux** (including WSL). Port st
 ```
 Portfolio/
 ├── assets/
-│   └── logo.svg              # Project logo
+│   └── logo.svg                     # Project logo
 ├── packages/
-│   ├── shared/               # Type definitions (Project, Service, API types)
-│   ├── server/               # Express backend
+│   ├── shared/                      # Type definitions (Project, Service, API types)
+│   ├── server/                      # Express backend
 │   │   └── src/
-│   │       ├── cli.ts            # npm CLI entry point
-│   │       ├── index.ts          # App factory + dev server
-│   │       ├── routes/           # API route handlers
-│   │       ├── services/         # Storage, port checker, backup, open
-│   │       └── middleware/       # Validation, error handling
-│   └── web/                  # React frontend
+│   │       ├── cli.ts               # npm CLI entry point
+│   │       ├── index.ts             # App factory + dev server
+│   │       ├── routes/              # API route handlers (projects, services, check,
+│   │       │                        #   data, ping, proxy)
+│   │       ├── services/            # Storage, port checker, backup, open project
+│   │       └── middleware/          # Validation, error handling
+│   └── web/                         # React frontend
 │       └── src/
-│           ├── components/       # tree (ServiceItem, ServiceCard, ProjectCard),
-│           │                     #   modals (Create/Edit Project/Service, DeleteConfirm, TagManager),
-│           │                     #   common (StatusBadge, TagChip, LatencyChip, PingIndicator, SettingsDialog),
-│           │                     #   sidebar (TagSidebar), layout (TopNav)
-│           ├── hooks/            # useProjects, usePing, useServiceLatency, useDefinedTags,
-│           │                     #   useKeyboardShortcuts
-│           ├── lib/              # api (typed fetch client), theme (ThemeProvider),
-│           │                     #   tagColorUtils (color algorithm), utils (cn)
-│           ├── locales/          # i18n translation files (en, zh, ja)
-│           └── pages/            # Dashboard
+│           ├── components/          # tree (ServiceCard, ProjectCard, PreviewPanel),
+│           │                        #   modals (Create/Edit Project/Service,
+│           │                        #   DeleteConfirm, TagManager),
+│           │                        #   common (StatusBadge, TagChip, LatencyChip,
+│           │                        #   PingIndicator, SettingsDialog),
+│           │                        #   sidebar (TagSidebar), layout (TopNav)
+│           ├── hooks/               # useProjects, usePing, useServiceLatency,
+│           │                        #   useDefinedTags, useKeyboardShortcuts
+│           ├── lib/                 # api (typed fetch client), theme (ThemeProvider),
+│           │                        #   tagColorUtils (color algorithm), utils (cn)
+│           ├── locales/             # i18n translation files (en, zh, ja)
+│           └── pages/               # Dashboard
 ├── .develop/
-│   └── Requirements.md           # Full requirements document
+│   └── Requirements.md              # Full requirements document
 └── pnpm-workspace.yaml
 ```
 
@@ -150,6 +159,20 @@ Portfolio/
 | `GET`  | `/api/export` | Export all data as JSON                                   |
 | `POST` | `/api/import` | Import JSON data (`{ data, mode: "merge" \| "replace" }`) |
 
+### Info & Health
+
+| Method | Path          | Description              |
+| ------ | ------------- | ------------------------ |
+| `GET`  | `/api/info`   | Server info (port, etc.) |
+| `GET`  | `/api/health` | Health check             |
+
+### Proxy
+
+| Host                        | Description                               |
+| --------------------------- | ----------------------------------------- |
+| `http://p{PORT}.localhost/` | Transparent proxy to `localhost:{PORT}`   |
+| `ws://p{PORT}.localhost/`   | WebSocket proxy (HTTP upgrade → TCP pipe) |
+
 ### Response Format
 
 ```json
@@ -179,8 +202,6 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 | `test`     | Adding or correcting tests                              |
 | `chore`    | Tooling, dependencies, build scripts                    |
 | `ci`       | CI/CD configuration                                     |
-
-All commits must be GPG-signed.
 
 ## License
 
