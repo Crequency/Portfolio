@@ -42,6 +42,18 @@ function screenshotShim(port: number) {
       pixelRatio: 0.5,
       cacheBust: true,
       skipFonts: true,
+      filter: function(node) {
+        // Exclude cross-origin <img> — fetch() would be blocked by CORS
+        if (node.tagName === 'IMG') {
+          var src = node.getAttribute('src') || node.src || '';
+          if (!src || src.indexOf('data:') === 0 || src.indexOf('blob:') === 0) return true;
+          try {
+            var u = new URL(src, location.href);
+            return u.origin === location.origin;
+          } catch(_) { return true; }
+        }
+        return true;
+      },
     })
     .then(function(dataUrl) {
       console.log('[Portfolio] doScreenshot: dataUrl length', dataUrl.length);
